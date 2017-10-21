@@ -1,54 +1,50 @@
 ﻿function Write-POVFPesterEventLog {
   <#
-    .SYNOPSIS
-    Custom formating of Pester test results written to EventLog Application
+      .SYNOPSIS
+      Custom formating of Pester test results written to EventLog Application
 
-    .DESCRIPTION
-    Accepts PesterResults from Invoke-Pester -passThru as input. Will parse through results and write events to EventLog Application with provided EventSource.
-    EventIDBase will be used to calculate Information (+1) and Error (+2) EventIDs.
+      .DESCRIPTION
+      Accepts PesterResults from Invoke-Pester -passThru as input. Will parse through results and write events to EventLog Application with provided EventSource.
+      EventIDBase will be used to calculate Information (+1) and Error (+2) EventIDs.
 
-    .PARAMETER PesterTestsResults
-    PSCustomObject from Invoke-Pester -PassThru option
+      .PARAMETER PesterTestsResults
+      PSCustomObject from Invoke-Pester -PassThru option
 
-    .PARAMETER EventSource
-    EventSource used to write events to EventLog
+      .PARAMETER EventSource
+      EventSource used to write events to EventLog
 
-    .PARAMETER EventIDBase
-    Base Integer number that will be used to calculate Information (+1) and Error (+2) messages.
+      .PARAMETER EventIDBase
+      Base ID to pass to Write-POVFPesterEventLog
+      Success tests will be written to EventLog Application with MySource as source and EventIDBase +1.
+      Errors tests will be written to EventLog Application with MySource as source and EventIDBase +2.
+      
+      .EXAMPLE
+      $tests = Invoke-Pester -Script c:\adminTools\tests.ps1 -PassThru
+      Write-POVFPesterEventLog -PesterTestsResults $tests -EventSource MySource -EventIDBase 1000
 
-    .EXAMPLE
-    $tests = Invoke-Pester -Script c:\adminTools\tests.ps1 -PassThru
-    Write-POVFPesterEventLog -PesterTestsResults $tests -EventSource MySource -EventIDBase 1000
+      Will parse through all results in $tests.
+      Passed tests will be written as Information events with EventID 1001 to 'Application' Log with source $EventSource
+      Failed tests will be written as Error events with EventID 1002 to 'Application' Log with source $EventSource
 
-    Will parse through all results in $tests.
-    Passed tests will be written as Information events with EventID 1001 to 'Application' Log with source $EventSource
-    Failed tests will be written as Error events with EventID 1002 to 'Application' Log with source $EventSource
-
-    .INPUTS
-    Accepts PesterResults from Invoke-Pester -passThru
-
-    .OUTPUTS
-    Events in EventLog are the output.
+      .INPUTS
+      Accepts PesterResults from Invoke-Pester -passThru
   #>
-
-
-
   [CmdletBinding()]
   [OutputType([Void])]
   param
   (
     [Parameter(Mandatory=$false,
-      ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
+    ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [PSCustomObject]
     $PesterTestsResults,
 
     [Parameter(Mandatory=$false,
-      ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
+    ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [System.String]
     $EventSource,
 
     [Parameter(Mandatory=$false,
-      ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
+    ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [System.Int32]
     $EventIDBase = 1000
   )
