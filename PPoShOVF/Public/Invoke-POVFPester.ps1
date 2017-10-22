@@ -63,12 +63,21 @@
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [ValidateScript({Test-Path $_ -Type Container})]
     [String]
-    $OutputFolder
+    $OutputFolder,
+
+    [Parameter(Mandatory=$false,HelpMessage='Show Pester Tests on console',
+    ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
+    [String]
+    $Show
   )
 
   Begin{
+    if($PSBoundParameters.ContainsKey('Show')){
+      $pesterParams =@{
+        Show = $Show
+      }
+    }
     $pesterParams =@{
-      Show = 'None'
       PassThru = $true
     }
   }
