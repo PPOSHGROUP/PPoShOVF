@@ -27,6 +27,12 @@
       .PARAMETER Credential
       Credentials to be used in remote tests
 
+      .PARAMETER POVFPSSession
+      PSSession to be used in remote tests
+
+      .PARAMETER Show
+      If enabled will show pester results to console.
+
       .EXAMPLE
       Invoke-POVFPester -PesterFile C:\SomePath\Pester1.Tests.ps1 -EventSource MySource -EventID 1000
       Will run all tests from Pester1.Tests.ps1 file.
@@ -68,13 +74,22 @@
     [Parameter(Mandatory=$false,HelpMessage='Show Pester Tests on console',
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [String]
-    $Show
+    $Show,
+    
+    [Parameter(Mandatory=$false,
+    ValueFromPipeline,ValueFromPipelineByPropertyName)]
+    $POVFPSSession
   )
 
   Begin{
     if($PSBoundParameters.ContainsKey('Show')){
       $pesterParams =@{
         Show = $Show
+      }
+    }
+    else {
+      $pesterParams = @{
+        Show = 'None'
       }
     }
     $pesterParams =@{
