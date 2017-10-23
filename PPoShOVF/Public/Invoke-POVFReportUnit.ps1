@@ -1,4 +1,24 @@
-function Invoke-ReportUnit {
+function Invoke-POVFReportUnit {
+    <#
+    .SYNOPSIS
+    Will generate html report based on NUnit XML files.
+    
+    .DESCRIPTION
+    Will use ReportUnit executable to generate html report based on NUnit xml files
+    
+    .PARAMETER ReportUnitPath
+    Optional. Path to ReportUnit.exe. If not provided - will use the one provided within this module.
+    
+    .PARAMETER InputFolder
+    Location where all NUnit xml files are located
+    
+    .PARAMETER OutputFolder
+    Optional. Location where output html files should be written. If not provided will use InputFolder as output folder.
+    
+    .EXAMPLE
+    Invoke-POVFReportUnit -ReportUnitPath c:\Tools\ReportUnit.exe -InputFolder c:\PesterTests -OutputFolder c:\PesterReports
+    
+    #>
    [CmdletBinding()]
    param 
    (
