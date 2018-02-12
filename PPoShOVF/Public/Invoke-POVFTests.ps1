@@ -20,7 +20,7 @@ function Invoke-POVFTests {
       .PARAMETER EventSource
       Name for EventSource to be used in writing events to EventLog
 
-      .PARAMETER EventBaseID
+      .PARAMETER EventIDBase
       Base ID to pass to Write-pOVFPesterEventLog
       Success tests will be written to EventLog Application with MySource as source and EventIDBase +1.
       Errors tests will be written to EventLog Application with MySource as source and EventIDBase +2.
@@ -74,18 +74,18 @@ function Invoke-POVFTests {
     [Parameter(Mandatory=$false,
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [int32]
-    $EventBaseID,
+    $EventIDBase,
 
-    [Parameter(Mandatory=$false,HelpMessage='Folder with Pester tests',
+    [Parameter(Mandatory=$false,HelpMessage='Folder with Pester test results',
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [ValidateScript({Test-Path $_ -Type Container -IsValid})]
     [String]
     $OutputFolder,
 
-    [Parameter(Mandatory=$false,
-    ValueFromPipeline,ValueFromPipelineByPropertyName)]
-    [System.Management.Automation.Credential()][System.Management.Automation.PSCredential]
-    $Credential  = [System.Management.Automation.PSCredential]::Empty,
+    #[Parameter(Mandatory=$false,
+    #ValueFromPipeline,ValueFromPipelineByPropertyName)]
+    #[System.Management.Automation.Credential()][System.Management.Automation.PSCredential]
+    #$Credential  = [System.Management.Automation.PSCredential]::Empty,
 
     [Parameter(Mandatory=$false,
     ValueFromPipeline,ValueFromPipelineByPropertyName)]
@@ -99,8 +99,7 @@ function Invoke-POVFTests {
 
   process{
     $pesterFile = Get-ChildItem -Path $DiagnosticsFolder -Recurse -File |
-    Where-Object {$_.Name -match 'Tests.ps1'} |
-    Select-Object -ExpandProperty FullName
+      Where-Object {$_.Name -match 'Tests.ps1'} | Select-Object -ExpandProperty FullName
     if($pesterFile){
       $pOVFPesterParams = @{
         PesterFile = $pesterFile
@@ -115,16 +114,14 @@ function Invoke-POVFTests {
       $pOVFPesterParams.OutputFolder = $OutputFolder
     }
     if($PSBoundParameters.ContainsKey('WriteToEventLog')){
-      $pOVFPesterParams=@{
-        WriteToEventLog = $true
-        EventSource = $EventSource
-        EventIDBase = $EventBaseID
-      }
+      $pOVFPesterParams.WriteToEventLog = $true
+      $pOVFPesterParams.EventSource = $EventSource
+      $pOVFPesterParams.EventIDBase = $EventIDBase
     }
-    if($PSBoundParameters.ContainsKey('Credential')){
-      $pOVFCredential = $Credential
-      Write-Log -Info -Message "Will use {$($pOVFCredential.UserName)} in diagnostics tests"
-    }
+    #if($PSBoundParameters.ContainsKey('Credential')){
+    #  $pOVFCredential = $Credential
+    #  Write-Log -Info -Message "Will use {$($pOVFCredential.UserName)} in diagnostics tests"
+    #}
     if($PSBoundParameters.ContainsKey('Show')){
       Write-Log -Info -Message "Will show test results to console"
       $pOVFPesterParams.Show = $Show

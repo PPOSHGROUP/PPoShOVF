@@ -10,10 +10,10 @@ function Invoke-POVFReportUnit {
     Optional. Path to ReportUnit.exe. If not provided - will use the one provided within this module.
     
     .PARAMETER InputFolder
-    Location where all NUnit xml files are located
+    Location where all NUnit xml files are located. No spaces in folder names.
     
     .PARAMETER OutputFolder
-    Optional. Location where output html files should be written. If not provided will use InputFolder as output folder.
+    Optional. Location where output html files should be written. If not provided will use InputFolder as output folder. No spaces in folder names.
     
     .EXAMPLE
     Invoke-POVFReportUnit -ReportUnitPath c:\Tools\ReportUnit.exe -InputFolder c:\PesterTests -OutputFolder c:\PesterReports

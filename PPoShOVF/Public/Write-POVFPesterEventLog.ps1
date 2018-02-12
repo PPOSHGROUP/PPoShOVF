@@ -53,10 +53,30 @@
     $EventIDInfo = $EventIDBase + 1
     $EventIDError = $EventIDBase + 2
 
+    
+  }
+  process{
     try {
       if (-not [system.diagnostics.eventlog]::SourceExists($EventSource)) {
         [system.diagnostics.EventLog]::CreateEventSource($EventSource, 'Application')
         Write-Log -Info -Message "Created EventSource {$EventSource} in {Application} log. Information messages with EventID {$EventIDInfo}. Error messages with EventID {$EventIDError}"
+      }
+      foreach ($testResult in $PesterTestsResults.TestResult) {
+        if ($testResult.Result -match 'Passed'){
+          $message = @"
+{0} - {1}
+{2} Status: {3}
+"@ -f $testResult.Describe, $testResult.Context, $testResult.Name, $testResult.Passed
+          Write-EventLog -LogName Application -Source $EventSource  -EntryType Information -Message $message -EventId $EventIDInfo -Category 0
+        }
+        elseif ($testResult.Result -match 'Failed') {
+          $message = @"
+{0} - {1}
+{2} Status: {3}
+FailureMessage: {4}
+"@ -f $testResult.Describe, $testResult.Context, $testResult.Name, $testResult.Passed, $testResult.FailureMessage
+          Write-EventLog -LogName Application -Source $EventSource  -EntryType Error -Message $message -EventId $EventIDError -Category 0
+        }
       }
     }
     catch [System.Security.SecurityException],[Microsoft.PowerShell.Commands.WriteEventLogCommand]{
@@ -64,28 +84,6 @@
     }
     catch {
       $_
-    }
-  }
-  process{
-    foreach ($testResult in $PesterTestsResults.TestResult) {
-      $message = @"
-{0}
-  {1}
-    {2}
-       Status: {3}
-       {4}
-"@ -f $testResult.Describe, $testResult.Context, $testResult.Name, $testResult.Passed, $testResult.FailureMessage
-      try {
-        if ($testResult.Result -match 'Passed'){
-          Write-EventLog -LogName Application -Source $EventSource  -EntryType Information -Message $message -EventId $EventIDInfo -Category 0
-        }
-        elseif ($testResult.Result -match 'Failed') {
-          Write-EventLog -LogName Application -Source $EventSource  -EntryType Error -Message $message -EventId $EventIDError -Category 0
-        }
-      }
-      catch {
-        $_
-      }
     }
   }
   end {

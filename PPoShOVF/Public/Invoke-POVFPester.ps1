@@ -16,7 +16,7 @@
       .PARAMETER EventSource
       Name for EventSource to be used in writing events to EventLog
 
-      .PARAMETER EventBaseID
+      .PARAMETER EventIDBase
       Base ID to pass to Write-POVFPesterEventLog
       Success tests will be written to EventLog Application with MySource as source and EventIDBase +1.
       Errors tests will be written to EventLog Application with MySource as source and EventIDBase +2.
@@ -46,7 +46,7 @@
   Param(
     [Parameter(Mandatory=$True,
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
-    [ValidateScript({Test-Path $_ -Type Leaf})]
+    [ValidateScript({Test-Path $_})]
     [string[]]
     $PesterFile,
 
@@ -63,7 +63,7 @@
     [Parameter(Mandatory=$false,
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [int32]
-    $EventBaseID,
+    $EventIDBase,
 
     [Parameter(Mandatory=$false,
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
@@ -82,18 +82,14 @@
   )
 
   Begin{
-    if($PSBoundParameters.ContainsKey('Show')){
-      $pesterParams =@{
-        Show = $Show
-      }
-    }
-    else {
-      $pesterParams = @{
-        Show = 'None'
-      }
-    }
     $pesterParams =@{
       PassThru = $true
+    }
+    if($PSBoundParameters.ContainsKey('Show')){
+      $pesterParams.Show = $Show
+    }
+    else {
+      $pesterParams.Show = 'None'
     }
   }
   Process{
@@ -117,9 +113,9 @@
         $pesterEventParams=@{
           PesterTestsResults = $povfTests
           EventSource = $EventSource
-          EventIDBase = $EventBaseID
+          EventIDBase = $EventIDBase
         }
-        Write-Log -Info -Message "Writing test results to Event Log {Application} with Event Source {$EventSource} and EventBaseID {$EventBaseID}"
+        Write-Log -Info -Message "Writing test results to Event Log {Application} with Event Source {$EventSource} and EventIDBase {$EventIDBase}"
         Write-POVFPesterEventLog @pesterEventParams
       }
 
