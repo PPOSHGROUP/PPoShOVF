@@ -63,18 +63,11 @@
       }
       foreach ($testResult in $PesterTestsResults.TestResult) {
         if ($testResult.Result -match 'Passed'){
-          $message = @"
-{0} - {1}
-{2} Status: {3}
-"@ -f $testResult.Describe, $testResult.Context, $testResult.Name, $testResult.Passed
+          $message = "{0} - {1}`n {2} Status: {3}" -f $testResult.Describe, $testResult.Context, $testResult.Name, $testResult.Passed
           Write-EventLog -LogName Application -Source $EventSource  -EntryType Information -Message $message -EventId $EventIDInfo -Category 0
         }
         elseif ($testResult.Result -match 'Failed') {
-          $message = @"
-{0} - {1}
-{2} Status: {3}
-FailureMessage: {4}
-"@ -f $testResult.Describe, $testResult.Context, $testResult.Name, $testResult.Passed, $testResult.FailureMessage
+          $message = "{0} - {1}`n {2} Status: {3}`n Message: {4}" -f $testResult.Describe, $testResult.Context, $testResult.Name, $testResult.Passed, $testResult.FailureMessage
           Write-EventLog -LogName Application -Source $EventSource  -EntryType Error -Message $message -EventId $EventIDError -Category 0
         }
       }
