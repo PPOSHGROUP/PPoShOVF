@@ -8,8 +8,11 @@ function Invoke-POVFTests {
       If WriteToEventLog is enabled will write EventLog entries.
       If OutputFolder is provided - will generate NUnit xml files with results
 
-      .PARAMETER pOVFConfiguration
-      PSCustomObject with configuration for Diagnostic tests.
+      .PARAMETER POVFTestsConfiguration
+      hashtable @{
+        Test = Filepath
+        Parameters = [hashtable]$Parameters
+      }
 
       .PARAMETER DiagnosticsFolder
       Location where Diagnostic Tests are stored
@@ -50,16 +53,10 @@ function Invoke-POVFTests {
   [CmdletBinding()]
   param
   (
-    [Parameter(Mandatory=$True, HelpMessage='Configuration as PSCustomObject',
+    [Parameter(Mandatory=$True, HelpMessage='Tests as hashtable',
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
-    [PSCustomObject]
-    $POVFConfiguration,
-
-    [Parameter(Mandatory=$True, HelpMessage='Folder with Pester tests',
-    ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
-    [ValidateScript({Test-Path $_ -Type Container})]
-    [System.String]
-    $DiagnosticsFolder,
+    [hashtable]
+    $POVFTestsConfiguration,
 
     [Parameter(Mandatory=$false,
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
@@ -82,54 +79,69 @@ function Invoke-POVFTests {
     [String]
     $OutputFolder,
 
-    #[Parameter(Mandatory=$false,
-    #ValueFromPipeline,ValueFromPipelineByPropertyName)]
-    #[System.Management.Automation.Credential()][System.Management.Automation.PSCredential]
-    #$Credential  = [System.Management.Automation.PSCredential]::Empty,
-
-    [Parameter(Mandatory=$false,
-    ValueFromPipeline,ValueFromPipelineByPropertyName)]
-    $POVFPSSession,
-
     [Parameter(Mandatory=$false,HelpMessage='Show Pester Tests on console',
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [String]
     $Show
   )
-
+  begin {
+    $pesterParams =@{
+      PassThru = $true
+    }
+    if($PSBoundParameters.ContainsKey('Show')){
+      Write-Log -Info -Message "Will show test results to console"
+      $pesterParams.Show = $Show
+    }
+    else {
+      $pesterParams.Show = 'None'
+    }
+  }
   process{
     $pesterFile = Get-ChildItem -Path $DiagnosticsFolder -Recurse -File |
       Where-Object {$_.Name -match 'Tests.ps1'} | Select-Object -ExpandProperty FullName
-    if($pesterFile){
-      $pOVFPesterParams = @{
-        PesterFile = $pesterFile
-      }
-    }
-    else {
+    if(-not ($pesterFile)){
       Write-Log -Error -Message "No Diagnostics tests found in path {$DiagnosticsFolder}"
       break
     }
 
-    if($PSBoundParameters.ContainsKey('OutputFolder')) {
-      $pOVFPesterParams.OutputFolder = $OutputFolder
-    }
-    if($PSBoundParameters.ContainsKey('WriteToEventLog')){
-      $pOVFPesterParams.WriteToEventLog = $true
-      $pOVFPesterParams.EventSource = $EventSource
-      $pOVFPesterParams.EventIDBase = $EventIDBase
-    }
-    #if($PSBoundParameters.ContainsKey('Credential')){
-    #  $pOVFCredential = $Credential
-    #  Write-Log -Info -Message "Will use {$($pOVFCredential.UserName)} in diagnostics tests"
-    #}
-    if($PSBoundParameters.ContainsKey('Show')){
-      Write-Log -Info -Message "Will show test results to console"
-      $pOVFPesterParams.Show = $Show
+    $ParametersOverrides = @{
+      POVFTestsConfiguration = $POVFTestsConfiguration
     }
     if($PSBoundParameters.POVFPSSession) {
       Write-Log -Info -Message "Will use PSSession {$($POVFPSSession.ComputerName)} in diagnostics tests"
-      $pOVFPesterParams.POVFPSSession = $POVFPSSession
+      $ParametersOverrides.POVFPSSession = $POVFPSSession        
     }
-    Invoke-pOVFPester @pOVFPesterParams
+    
+    ForEach ($file in $PesterFile){
+      Write-Log -Info -Message "Processing PesterFile {$file}"
+      $pesterParams.Script = @{
+        Path = $file
+        Parameters = $ParametersOverrides
+      }
+      if($PSBoundParameters.ContainsKey('OutputFolder')) {
+        $timestamp = Get-Date -Format 'yyyyMMdd_HHmm'
+        $fileNameTemp = (split-Path $file -Leaf).replace('.ps1','')
+        $childPath = "{0}_{1}_PesterResults.xml" -f $fileNameTemp, $timestamp
+
+        $fileName = Join-Path -Path $OutputFolder -ChildPath $childPath
+        $pesterParams.OutputFile = $fileName
+        $pesterParams.OutputFormat ='NUnitXml'
+        Write-Log -Info -Message "Results for Pester file {$file} will be written to {$($pesterParams.OutputFile)}"
+      }
+      #region Perform Tests
+      $povfTests = Invoke-Pester @pesterParams
+      #endregion 
+      if($PSBoundParameters.ContainsKey('WriteToEventLog')){
+        $pesterEventParams=@{
+          PesterTestsResults = $povfTests
+          EventSource = $EventSource
+          EventIDBase = $EventIDBase
+        }
+        Write-Log -Info -Message "Writing test results to Event Log {Application} with Event Source {$EventSource} and EventIDBase {$EventIDBase}"
+        Write-POVFPesterEventLog @pesterEventParams
+      }
+
+      Write-Log -Info -Message "Pester File {$file} Processed."
+    }
   }
 }
