@@ -1,4 +1,4 @@
-function Invoke-POVFTests {
+function Invoke-POVFTest {
   <#
       .SYNOPSIS
       Based on Configuration and tests from DiagnosticsFolder will perform Pester Tests.
@@ -8,7 +8,7 @@ function Invoke-POVFTests {
       If WriteToEventLog is enabled will write EventLog entries.
       If OutputFolder is provided - will generate NUnit xml files with results
 
-      .PARAMETER POVFTestsConfiguration
+      .PARAMETER POVFTestFile
       hashtable @{
         Test = Filepath
         Parameters = [hashtable]$Parameters
@@ -42,7 +42,7 @@ function Invoke-POVFTests {
       If enabled will show pester results to console.
 
       .EXAMPLE
-      Invoke-POVFTests -Configuration $configuration -PesterFile C:\SomePath\Pester1.Tests.ps1 -EventSource MySource -EventID 1000
+      Invoke-POVFTest -Configuration $configuration -PesterFile C:\SomePath\Pester1.Tests.ps1 -EventSource MySource -EventID 1000
       Will run all tests from Pester1.Tests.ps1 file.
       Success tests will be written to EventLog Application with MySource as source and EventID 1001.
       Errors tests will be written to EventLog Application with MySource as source and EventID 1002.
@@ -53,10 +53,16 @@ function Invoke-POVFTests {
   [CmdletBinding()]
   param
   (
-    [Parameter(Mandatory=$True, HelpMessage='Tests as hashtable',
+    [Parameter(Mandatory=$True, HelpMessage='File with tests',
+    ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
+    [ValidateScript({Test-Path -Path $_ -PathType Leaf})]
+    [string[]]
+    $POVFTestFile,
+
+    [Parameter(Mandatory=$false, HelpMessage='hashtable with Configuration',
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [hashtable]
-    $POVFTestsConfiguration,
+    $POVFTestFileParameters,
 
     [Parameter(Mandatory=$false,
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
@@ -79,10 +85,21 @@ function Invoke-POVFTests {
     [String]
     $OutputFolder,
 
+    [Parameter(Mandatory=$false,HelpMessage='FileName for Pester test results',
+    ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
+    [ValidateScript({Test-Path $_ -Type Leaf -IsValid})]
+    [String]
+    $OutputFile,
+
     [Parameter(Mandatory=$false,HelpMessage='Show Pester Tests on console',
     ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
     [String]
-    $Show
+    $Show,
+
+    [Parameter(Mandatory=$false,HelpMessage='Tag for Pester ',
+    ValueFromPipeline=$True,ValueFromPipelineByPropertyName=$True)]
+    [string[]]
+    $Tag
   )
   begin {
     $pesterParams =@{
@@ -95,32 +112,27 @@ function Invoke-POVFTests {
     else {
       $pesterParams.Show = 'None'
     }
+    if($PSBoundParameters.ContainsKey('Tag')){
+      $pesterParams.Tag = $Tag
+    }
   }
   process{
-    $pesterFile = Get-ChildItem -Path $DiagnosticsFolder -Recurse -File |
-      Where-Object {$_.Name -match 'Tests.ps1'} | Select-Object -ExpandProperty FullName
-    if(-not ($pesterFile)){
-      Write-Log -Error -Message "No Diagnostics tests found in path {$DiagnosticsFolder}"
-      break
-    }
-
-    $ParametersOverrides = @{
-      POVFTestsConfiguration = $POVFTestsConfiguration
-    }
-    if($PSBoundParameters.POVFPSSession) {
-      Write-Log -Info -Message "Will use PSSession {$($POVFPSSession.ComputerName)} in diagnostics tests"
-      $ParametersOverrides.POVFPSSession = $POVFPSSession        
-    }
     
-    ForEach ($file in $PesterFile){
+    
+    ForEach ($file in $POVFTestFile){
       Write-Log -Info -Message "Processing PesterFile {$file}"
       $pesterParams.Script = @{
         Path = $file
-        Parameters = $ParametersOverrides
+        Parameters = $POVFTestFileParameters
       }
       if($PSBoundParameters.ContainsKey('OutputFolder')) {
         $timestamp = Get-Date -Format 'yyyyMMdd_HHmm'
-        $fileNameTemp = (split-Path $file -Leaf).replace('.ps1','')
+        if($PSBoundParameters.ContainsKey('OutputFile')){
+          $fileNameTemp = $OutputFile
+        }
+        else { 
+          $fileNameTemp = (split-Path $file -Leaf).replace('.ps1','')
+        }
         $childPath = "{0}_{1}_PesterResults.xml" -f $fileNameTemp, $timestamp
 
         $fileName = Join-Path -Path $OutputFolder -ChildPath $childPath
