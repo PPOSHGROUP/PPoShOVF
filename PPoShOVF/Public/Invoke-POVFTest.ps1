@@ -126,6 +126,9 @@ function Invoke-POVFTest {
         Parameters = $POVFTestFileParameters
       }
       if($PSBoundParameters.ContainsKey('OutputFolder')) {
+        if(-not (Test-Path -Path $OutputFolder -PathType Container -ErrorAction SilentlyContinue)) {
+          [void](New-Item -Path $OutputFolder -ItemType Directory)
+        }
         $timestamp = Get-Date -Format 'yyyyMMdd_HHmm'
         if($PSBoundParameters.ContainsKey('OutputFile')){
           $fileNameTemp = $OutputFile
