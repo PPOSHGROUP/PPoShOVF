@@ -129,16 +129,16 @@ function Invoke-POVFTest {
         if(-not (Test-Path -Path $OutputFolder -PathType Container -ErrorAction SilentlyContinue)) {
           [void](New-Item -Path $OutputFolder -ItemType Directory)
         }
-        $timestamp = Get-Date -Format 'yyyyMMdd_HHmm'
         if($PSBoundParameters.ContainsKey('OutputFile')){
-          $fileNameTemp = $OutputFile
+          $fileName = Join-Path -Path $OutputFolder -ChildPath $OutputFile
         }
         else { 
+          $timestamp = Get-Date -Format 'yyyyMMdd_HHmm'
           $fileNameTemp = (split-Path $file -Leaf).replace('.ps1','')
+          $childPath = "{0}_{1}_PesterResults.xml" -f $fileNameTemp, $timestamp
+          $fileName = Join-Path -Path $OutputFolder -ChildPath $childPath
         }
-        $childPath = "{0}_{1}_PesterResults.xml" -f $fileNameTemp, $timestamp
-
-        $fileName = Join-Path -Path $OutputFolder -ChildPath $childPath
+                
         $pesterParams.OutputFile = $fileName
         $pesterParams.OutputFormat ='NUnitXml'
         Write-Log -Info -Message "Results for Pester file {$file} will be written to {$($pesterParams.OutputFile)}"
