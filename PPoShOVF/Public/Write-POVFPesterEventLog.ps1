@@ -52,8 +52,6 @@
   begin {
     $EventIDInfo = $EventIDBase + 1
     $EventIDError = $EventIDBase + 2
-
-    
   }
   process{
     try {

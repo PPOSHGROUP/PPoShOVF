@@ -7,7 +7,7 @@ function Invoke-POVFReportUnit {
     Will use ReportUnit executable to generate html report based on NUnit xml files
     
     .PARAMETER ReportUnitPath
-    Optional. Path to ReportUnit.exe. If not provided - will use the one provided within this module.
+    Optional path to ReportUnit.exe. If not provided - will use the one provided within this module.
     
     .PARAMETER InputFolder
     Location where all NUnit xml files are located. No spaces in folder names.
@@ -44,7 +44,7 @@ function Invoke-POVFReportUnit {
        Write-Log -Info -Message "ReportUnit executable found in path {$ReportUnitPath}"
    }
    else {
-       $reportUnitExecutable = "$PSScriptRoot\..\ReportUnit\ReportUnit.exe"
+       $reportUnitExecutable = "$PSScriptRoot\..\bin\ReportUnit\ReportUnit.exe"
        Write-Log -Info -Message "ReportUnit executable found in module path {$reportUnitExecutable}"
    }
    if(-not($PSBoundParameters.ContainsKey('OutputFolder'))){
