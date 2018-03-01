@@ -106,7 +106,6 @@ function Invoke-POVFTest {
       PassThru = $true
     }
     if($PSBoundParameters.ContainsKey('Show')){
-      Write-Log -Info -Message "Will show test results to console"
       $pesterParams.Show = $Show
     }
     else {
@@ -120,7 +119,6 @@ function Invoke-POVFTest {
     
     
     ForEach ($file in $POVFTestFile){
-      Write-Log -Info -Message "Processing PesterFile {$file}"
       $pesterParams.Script = @{
         Path = $file
         Parameters = $POVFTestFileParameters
